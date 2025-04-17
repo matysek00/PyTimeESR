@@ -19,7 +19,7 @@ ham_keys_spins = {
     'S': tfloat, 'Stephen': [list, tfloat, 4], 'Stephen_axis': [list, tfloat, 3],
     'H': [list, tfloat, 3], 'G': [list, tfloat, 3]}   
 ham_keys_pairs = {
-    'pair': [list, tint, 2], 'J_exc': [list,tfloat, 3],}
+    'pair': [list, tint, 2], 'J_exc': [list, tfloat, 3],}
 
 default_ham = {
 ### Number of spins

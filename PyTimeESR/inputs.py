@@ -1,5 +1,9 @@
 
+import os
+from typing import Union
+
 from .default_inputs import *
+
                
 class F90Input(): 
     """Parent class to write fortran input.
@@ -69,6 +73,15 @@ class F90Input():
     def bool2string(value: bool):
         string = '.true.' if value else '.false.'
         return string
+    
+    @staticmethod
+    def string2bool(value: str):
+        if value == '.true.':
+            return True
+        elif value == '.false.':
+            return False
+        else:
+            raise ValueError(f"Invalid boolean string: {value}. Use '.true.' or '.false.'.")
 
 
     def input_line(self, value, comment: str = ''):
@@ -105,32 +118,39 @@ class Hamiltonian(F90Input):
 
     Args
     -----
-    hamiltonian_dict: dict
-        Dictionary with the Hamiltonian input. 
+    hamiltonian_dict: (dict, str)
+        Dictionary with the Hamiltonian input or a file with the Hamiltonian input.
     """
     
-    def __init__(self, hamiltonian_dict: dict, line_lenght = 80, padding_lenght = 40):
+    def __init__(self, hamiltonian_dict: Union[dict, str],
+                  line_lenght = 80, padding_lenght = 40):
         super(Hamiltonian, self).__init__(line_lenght, padding_lenght)
-        self.check_dictionary(hamiltonian_dict, ham_keys, 'Hamiltonian input')
+
+        assert isinstance(hamiltonian_dict, (dict, str),  "Hamiltonian input should be a dictionary or a file name")
+        if isinstance(hamiltonian_dict, str):
+            assert os.path.exists(hamiltonian_dict), f"Hamiltonian input file {hamiltonian_dict} does not exist"
+            self.load_input(hamiltonian_dict)
+        else:
+            self.params = hamiltonian_dict
+        self.check_dictionary(self.params, ham_keys, 'Hamiltonian input')
         
-        Nm = hamiltonian_dict['Nm']
-        Npairs = hamiltonian_dict['Npairs']
+        Nm = self.params['Nm']
+        Npairs = self.params['Npairs']
         
         assert  Nm > 0, "Number of spins should be greater than 0"
         assert Npairs >= 0, "Number of pairs should be greater than or equal to 0"
         
-        assert len(hamiltonian_dict['Spins']) == Nm, "Number of spins should match the number of spins in the dictionary"
-        assert len(hamiltonian_dict['pairs']) == Npairs, "Number of pairs should match the number of pairs in the dictionary"
+        assert len(self.params['Spins']) == Nm, "Number of spins should match the number of spins in the dictionary"
+        assert len(self.params['pairs']) == Npairs, "Number of pairs should match the number of pairs in the dictionary"
 
         for i in range(Nm): 
-            self.check_dictionary(hamiltonian_dict['Spins'][i], ham_keys_spins, 'Hamiltonian input - Spins')
+            self.check_dictionary(self.params['Spins'][i], ham_keys_spins, 'Hamiltonian input - Spins')
         for i in range(Npairs): 
-            self.check_dictionary(hamiltonian_dict['pairs'][i], ham_keys_pairs, 'Hamiltonian input - Pairs')
+            self.check_dictionary(self.params['pairs'][i], ham_keys_pairs, 'Hamiltonian input - Pairs')
         
-        S_trans = hamiltonian_dict['Spins'][0]['S']
+        S_trans = self.params['Spins'][0]['S']
         assert S_trans == .5, 'Transport electron should be a spin 1/2'
         
-        self.params = hamiltonian_dict
 
     def write_input(self,):
         """Write the Hamiltonian into a string.
@@ -177,51 +197,150 @@ class Hamiltonian(F90Input):
 
         return input_string
 
+    def load_input(self, input_file: str):
+        """Load the Hamiltonian from a file.
+
+        Args
+        -----
+        input_string: str
+            Hamiltonian input file
+        """
+        print('WARNING: Loading Hamiltonian from file is not tested')        
+        
+        infile = open(input_file, 'r')
+
+        params = {}
+        _ = infile.readline()
+        _ = infile.readline()
+        _ = infile.readline()
+        
+        params['Nm'] = int(infile.readline().split()[0])
+        params['Spins'] = []
+        
+        for _ in range(params['Nm']):
+            Spin = {}
+            _ = infile.readline()
+            Spin['S'] = float(infile.readline( ).split()[0])
+            Spin['Stephen'] = [float(i) for i in infile.readline().split()]
+            Spin['Stephen_axis'] = [float(i) for i in infile.readline().split()]
+            Spin['H'] = [float(i) for i in infile.readline().split()]
+            Spin['G'] = [float(i) for i in infile.readline().split()]
+            params['Spins'].append(Spin)
+        params['Npairs'] = int(infile.readline().split()[0])
+        params['pairs'] = []
+        
+        for _ in range(params['Npairs']):
+            pair = {}
+            pair['pair'] = [int(i) for i in infile.readline().split()]
+            pair['J_exc'] = [float(i) for i in infile.readline().split()]
+            params['pairs'].append(pair)
+
+        _ = infile.readline()
+        params['eps_QD'] = float(infile.readline().split()[0])
+        params['Hubbard'] = float(infile.readline().split()[0])
+
+        _ = infile.readline()
+        params['output_file'] = infile.readline().split()[0]
+        params['N_plot'] = int(infile.readline().split()[0])
+        params['prediag_hamiltonian'] = self.string2bool(infile.readline().split()[0])
+        params['eigenvectors'] = self.string2bool(infile.readline().split()[0])
+        
+        infile.close()
+        self.params = params
+
+    def create_output_dict(self):
+        
+        output_dict = {}
+        output_dict['hamiltonian'] = self.params['output_file']
+
+        if self.params['eigenvectors']:
+            output_dict['eigenvectors'] = 'Eigenvectors.dat'
+        if self.params['prediag_hamiltonian']:
+            output_dict['pre-diag_hamiltonian'] = 'PD_HAMIL.dat'
+        
+        return output_dict
+
 
 class Dynamics(F90Input):
-    """Write input for the dynamics. 
+    """Writer for the dynamics input. 
 
     Args
     -----
-    dynamics_dict: dict
-        Dictionary with the dynamics input. 
-        """
+    dynamics_dict: dict, str
+        Dictionary with the dynamics input or a file with the dynamics input.
+    code_version: str
+        Version of the TimeESR code to use 'bessel' (default) or 'standard'.
+    line_lenght: int
+        Length of a header line. Default is 80.
+    padding_lenght: int
+        Length of a line padding. Default is 40.
+    """
 
-    def __init__(self, dynamics_dict: dict, line_lenght = 80, padding_lenght = 40):
+    def __init__(self, dynamics_dict: Union(dict,str), code_version: str = 'bessel',
+                 line_lenght = 80, padding_lenght = 40):
         super(Dynamics, self).__init__(line_lenght, padding_lenght)
-        self.check_dictionary(dynamics_dict, dyn_keys, 'Dynamics input')
+        
+        
 
-        N_interval = dynamics_dict['N_interval']
-        Nfreq = dynamics_dict['Nfreq']
-        Nbias = dynamics_dict['Nbias']
-    
+        assert code_version in ['bessel', 'standard'], \
+            f"Code version {code_version} is not supported. Use 'bessel' or 'standard'."
+        
+        self.code_version = code_version
+        self.dyn_keys = dyn_keys
+
+        if code_version == 'standard':
+            # remove keys that are not used in the standard version
+            self.dyn_keys.pop('use_bessel')
+            self.dyn_keys.pop('bessel_aplitude')
+            self.dyn_keys.pop('p_max')
+            self.dyn_keys.pop('n_max')
+
+        assert isinstance(dynamics_dict, (dict, str)), "Dynamics input should be a dictionary or a file name"
+        if isinstance(dynamics_dict, str):
+            assert os.path.exists(dynamics_dict), f"Dynamics input file {dynamics_dict} does not exist"
+            self.load_input(dynamics_dict)
+        else:
+            self.params = dynamics_dict
+        
+        # check that the dictionary has the required keys with the correct types
+        self.check_dictionary(self.params, self.dyn_keys, 'Dynamics input')
+
+        N_interval = self.params['N_interval']
+        Nfreq = self.params['Nfreq']
+        Nbias = self.params['Nbias']
+
         assert N_interval > 0, "Number of intervals should be greater than 0"
         assert Nfreq > 0, "Number of frequencies should be greater than 0"
         
-        assert len(dynamics_dict['intervals']) == N_interval, "Number of intervals should match the number of intervals in the dictionary"
-        assert len(dynamics_dict['biases']) == Nbias, "Number of biases should match the number of biases in the dictionary"
+        assert len(self.params['intervals']) == N_interval, "Number of intervals should match the number of intervals in the dictionary"
+        assert len(self.params['biases']) == Nbias, "Number of biases should match the number of biases in the dictionary"
 
         for i in range(N_interval): 
-            self.check_dictionary(dynamics_dict['intervals'][i], dyn_keys_interval, 'Dynamics input - Intervals')
-            assert len(dynamics_dict['intervals'][i]['freq']) == Nfreq, "Number of frequencies should match the number of frequencies in the dictionary"
-            for j in range(Nfreq):
-                self.check_dictionary(dynamics_dict['intervals'][i]['freq'][j], dyn_keys_freq, 'Dynamics input - Frequencies')
-        for i in range(Nbias):
-            self.check_dictionary(dynamics_dict['biases'][i], dyn_keys_bias, 'Dynamics input - Biases')
+            # check that the intervals have the required keys with the correct types
+            self.check_dictionary(self.params['intervals'][i], dyn_keys_interval, 'Dynamics input - Intervals')
 
-        intervals = dynamics_dict['intervals']
+            assert len(self.params['intervals'][i]['freq']) == Nfreq, "Number of frequencies should match the number of frequencies in the dictionary"
+            
+            for j in range(Nfreq):
+                # check that the frequencies have the required keys with the correct types
+                self.check_dictionary(self.params['intervals'][i]['freq'][j], dyn_keys_freq, 'Dynamics input - Frequencies')
+
+        for i in range(Nbias):
+            # check that the biases have the required keys with the correct types
+            self.check_dictionary(self.params['biases'][i], dyn_keys_bias, 'Dynamics input - Biases')
+
+        intervals = self.params['intervals']
         assert all(intervals[i]['t0'] < intervals[i]['tf'] for i in range(N_interval)), "Interval times should be in increasing order"
         assert all(intervals[i]['t0'] == intervals[i-1]['tf'] for i in range(1, N_interval)), "Interval times should be continuous"
         assert intervals[0]['t0'] == 0, "First interval should start at 0"
-        assert intervals[-1]['tf'] == dynamics_dict['t_final'], "Last interval should end at t_final"
+        assert intervals[-1]['tf'] == self.params['t_final'], "Last interval should end at t_final"
         
-        if  dynamics_dict['use_bessel']:
+        if  self.params['use_bessel']:
             assert Nfreq == 1, "Number of frequencies should be 1 for Bessel function"
             assert N_interval == 1, "Number of intervals should be 1 for Bessel function"
-            assert dynamics_dict['p_max'] > dynamics_dict['n_max'], "Max order of Bessel function should be greater than max frequency"
-            assert dynamics_dict['n_max'] >= 0, "Max frequency of Bessel function should be greater than or equal to 0"
+            assert self.params['p_max'] > self.params['n_max'], "Max order of Bessel function should be greater than max frequency"
+            assert self.params['n_max'] >= 0, "Max frequency of Bessel function should be greater than or equal to 0"
 
-        self.params = dynamics_dict
 
     def write_input(self,):
         """Write the dynamics into a string.
@@ -275,12 +394,13 @@ class Dynamics(F90Input):
         input_string += self.input_line(self.params['spin_polarization'][1], 'Left electrode spin polarization')
         input_string += self.input_line(self.params['Electrode'], 'Current measurement: 0 is left and 1 is right electrode')
 
-        input_string += self.create_header('Bessel function', '-')
-        input_string += self.input_line(self.params['use_bessel'], 'Use Bessel function')
-        input_string += self.input_line(self.params['bessel_aplitude'][0], 'B_R strengt of the time depenndet pulse for right electrode')
-        input_string += self.input_line(self.params['bessel_aplitude'][1], 'B_L strengt of the time depenndet pulse for left electrode')
-        input_string += self.input_line(self.params['p_max'], 'Max order of Bessel function in both directions')
-        input_string += self.input_line(self.params['n_max'], 'Max frequency of Bessel function in both directions')
+        if self.code_version == 'bessel':
+            input_string += self.create_header('Bessel function', '-')
+            input_string += self.input_line(self.params['use_bessel'], 'Use Bessel function')
+            input_string += self.input_line(self.params['bessel_aplitude'][0], 'B_R strengt of the time depenndet pulse for right electrode')
+            input_string += self.input_line(self.params['bessel_aplitude'][1], 'B_L strengt of the time depenndet pulse for left electrode')
+            input_string += self.input_line(self.params['p_max'], 'Max order of Bessel function in both directions')
+            input_string += self.input_line(self.params['n_max'], 'Max frequency of Bessel function in both directions')
         
         input_string += self.create_header('Output', '-')
         input_string += self.input_line(self.params['population'], 'write POPULATION.dat')
@@ -301,3 +421,107 @@ class Dynamics(F90Input):
         input_string += self.create_header('End of input', '*')
         input_string += self.create_header('', '*')
         return input_string
+    
+    def load_input(self, input_file: str):
+        """Load the dynamics from a file.
+        
+        Args
+        -----
+        input_file: str
+            Dynamics input file
+        """
+        print('WARNING: Loading dynamics from file is not tested')
+
+        infile = open(input_file, 'r')
+        params = {}
+
+        _ = infile.readline()
+        _ = infile.readline()
+        _ = infile.readline()
+
+        params['Ntime'] = int(infile.readline().split()[0])
+        times = float(infile.readline().split()[:2])
+        params['t_initial'] = float(times[0])
+        params['t_final'] = float(times[1])
+        
+        _ = infile.readline()
+        params['N_interval'] = int(infile.readline().split()[0])
+        params['Nfreq'] = int(infile.readline().split()[0])
+        for _ in range(params['N_interval']):
+            interval = {}
+            times = float(infile.readline().split()[:2])
+            interval['t0'] = float(times[0])
+            interval['tf'] = float(times[1])
+            interval['freq'] = []
+            for _ in range(params['Nfreq']):
+                freq = {}
+                freq['Amplitude'] = float(infile.readline().split()[0])
+                freq['Frequency'] = float(infile.readline().split()[0])
+                interval['freq'].append(freq)
+            interval['Phase'] = float(infile.readline().split()[0])
+            params['intervals'].append(interval)
+
+        _ = infile.readline()
+        params['gamma0'] = [float(infile.readline().split()[0]), 
+                            float(infile.readline().split()[0])]
+        params['gamma1'] = [float(infile.readline().split()[0]), 
+                            float(infile.readline().split()[0])]
+        params['cutoff'] = float(infile.readline().split()[0])
+        params['gammaC'] = float(infile.readline().split()[0])
+        params['integral_points'] = int(infile.readline().split()[0])
+        
+        params['biases'] = []
+        _ = infile.readline()
+        params['Nbias'] = int(infile.readline().split()[0])
+        for _ in range(params['Nbias']):
+            bias = {}
+            bias['bias'] = [float(infile.readline().split()[0]), 
+                            float(infile.readline().split()[0])]
+            bias['b_time'] = float(infile.readline().split()[0])
+            params['biases'].append(bias)
+
+        params['Temperature'] = float(infile.readline().split()[0])
+        params['spin_polarization'] = [float(infile.readline().split()[0]), 
+                                       float(infile.readline().split()[0])]
+        params['Electrode'] = int(infile.readline().split()[0])
+
+        if self.code_version == 'bessel':
+            _ = infile.readline()
+            params['use_bessel'] = self.string2bool(infile.readline().split()[0])
+            params['bessel_aplitude'] = [float(infile.readline().split()[0]), 
+                                          float(infile.readline().split()[0])]
+            params['p_max'] = int(infile.readline().split()[0])
+            params['n_max'] = int(infile.readline().split()[0])
+
+        _ = infile.readline()
+        params['population'] = self.string2bool(infile.readline().split()[0])
+        params['density_matrix'] = self.string2bool(infile.readline().split()[0])
+        params['output_file'] = infile.readline().split()[0]
+        params['output_fourier'] = infile.readline().split()[0]
+        params['output_ESR'] = infile.readline().split()[0]
+
+        _ = infile.readline()
+        params['runs'] = self.string2bool(infile.readline().split()[0])
+
+        _ = infile.readline()
+        params['spindyn'] = self.string2bool(infile.readline().split()[0])
+        params['redimension'] = self.string2bool(infile.readline().split()[0])
+        params['Nd'] = int(infile.readline().split()[0])
+        infile.close()
+        self.params = params
+        
+    def create_output_dict(self):
+        
+        output_dict = {}
+        output_dict['current'] = self.params['output_file']
+        output_dict['fourier'] = self.params['output_fourier']
+        output_dict['DC'] = self.params['output_ESR']
+
+        if self.params['population']:
+            output_dict['population'] = 'POPULATIONS.dat'
+        if self.params['density_matrix']:
+            output_dict['density_matrix'] = 'RHO.dat'
+        if self.params['spindyn']:
+            output_dict['spin_dynamics'] = 'SpinDynamics.dat'
+
+        return output_dict
