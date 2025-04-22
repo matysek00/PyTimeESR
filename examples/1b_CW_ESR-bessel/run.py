@@ -13,11 +13,12 @@ def main():
     ham_dict = PyTimeESR.default_ham
     dyn_dict = PyTimeESR.default_dyn
     dyn_dict['runs'] = True
+    dyn_dict['use_bessel'] = True
     
     run_path = os.getcwd()
     code_path = '/home/matyas/Programs/TimeESR-Bessel/src'
 
-    freqencies = np.arange(15., 18., 0.04)
+    freqencies = np.arange(16.8, 17.2, 0.04)
     esr = np.zeros_like(freqencies)
     PyTimeESR.make(code_path)
     
@@ -37,7 +38,7 @@ def main():
             Sim.output_dict['spin_dynamics'],
             os.path.join(run_path, f'SP-{f:02f}.dat'))
 
-        esr[i] = Sim.results_dict['DC']
+        esr[i] = np.loadtxt(Sim.output_dict['esr'])
         outfile.write(f"{f:.6f} {esr[i]:.6f}\n")
         outfile.flush()
 

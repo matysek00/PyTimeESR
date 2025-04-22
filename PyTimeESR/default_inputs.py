@@ -43,8 +43,8 @@ default_ham = {
 ### Output 
     'output_file': 'Hamiltonian.output',
     'N_plot': 4,
-    'prediag_hamiltonian': True,
-    'eigenvectors': True,
+    'prediag_hamiltonian': False,
+    'eigenvectors': False,
 }
 
 dyn_keys = {
@@ -111,7 +111,7 @@ default_dyn = {
     'p_max': 10,
     'n_max': 3,
 ### Output
-    'population': True,
+    'population': False,
     'density_matrix': False, 
     'output_file': 'C.dat',
     'output_fourier': 'S.dat',
@@ -119,7 +119,7 @@ default_dyn = {
 ### Read previous hamiltonian
     'runs': False, 
 ### Misc
-    'spindyn': True, 
+    'spindyn': False, 
     'redimension': False,
     'Nd': 4,
     }

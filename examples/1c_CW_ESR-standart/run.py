@@ -15,7 +15,7 @@ def main():
     dyn_dict['runs'] = True
     
     run_path = os.getcwd()
-    code_path = '/home/matyas/Programs/TimeESR-Bessel/src'
+    code_path = '/home/matyas/Programs/TimeESR/src'
 
     freqencies = np.arange(15., 18., 0.04)
     esr = np.zeros_like(freqencies)
@@ -27,7 +27,8 @@ def main():
     for i, f in enumerate(freqencies):
         dyn_dict['intervals'][0]['freq'][0]['Frequency'] = f
         
-        Sim = PyTimeESR.Simulation(ham_dict, dyn_dict, run_path, code_path)
+        Sim = PyTimeESR.Simulation(ham_dict, dyn_dict, run_path, 
+                                   code_path, code_version='standard')
         Sim.run()
 
         os.rename(
