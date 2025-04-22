@@ -273,28 +273,28 @@ class Dynamics(F90Input):
     dynamics_dict: dict, str
         Dictionary with the dynamics input or a file with the dynamics input.
     code_version: str
-        Version of the TimeESR code to use 'bessel' (default) or 'standard'.
+        Version of the TimeESR code to use 'standart' (default) or 'bessel'.
     line_lenght: int
         Length of a header line. Default is 80.
     padding_lenght: int
         Length of a line padding. Default is 40.
     """
 
-    def __init__(self, dynamics_dict: Union[dict,str], code_version: str = 'bessel',
+    def __init__(self, dynamics_dict: Union[dict,str], code_version: str = 'standart',
                  line_lenght = 80, padding_lenght = 40):
         super(Dynamics, self).__init__(line_lenght, padding_lenght)
         
 
-        assert code_version in ['bessel', 'standard'], \
-            f"Code version {code_version} is not supported. Use 'bessel' or 'standard'."
+        assert code_version in ['bessel', 'standart'], \
+            f"Code version {code_version} is not supported. Use 'bessel' or 'standart'."
         
         self.code_version = code_version
         self.dyn_keys = dyn_keys.copy() 
 
-        if code_version == 'standard':
-            # remove keys that are not used in the standard version
+        if code_version == 'standart':
+            # remove keys that are not used in the standart version
             self.dyn_keys.pop('use_bessel')
-            self.dyn_keys.pop('bessel_aplitude')
+            self.dyn_keys.pop('bessel_amplitude')
             self.dyn_keys.pop('p_max')
             self.dyn_keys.pop('n_max')
 
@@ -338,7 +338,7 @@ class Dynamics(F90Input):
         assert intervals[0]['t0'] == 0, "First interval should start at 0"
         assert intervals[-1]['tf'] == self.params['t_final'], "Last interval should end at t_final"
         
-        if code_version == 'standard':
+        if code_version == 'standart':
             return
         
         if  self.params['use_bessel']:
@@ -403,8 +403,8 @@ class Dynamics(F90Input):
         if self.code_version == 'bessel':
             input_string += self.create_header('Bessel function', '-')
             input_string += self.input_line(self.params['use_bessel'], 'Use Bessel function')
-            input_string += self.input_line(self.params['bessel_aplitude'][0], 'B_R strengt of the time depenndet pulse for right electrode')
-            input_string += self.input_line(self.params['bessel_aplitude'][1], 'B_L strengt of the time depenndet pulse for left electrode')
+            input_string += self.input_line(self.params['bessel_amplitude'][0], 'B_R strengt of the time depenndet pulse for right electrode')
+            input_string += self.input_line(self.params['bessel_amplitude'][1], 'B_L strengt of the time depenndet pulse for left electrode')
             input_string += self.input_line(self.params['p_max'], 'Max order of Bessel function in both directions')
             input_string += self.input_line(self.params['n_max'], 'Max frequency of Bessel function in both directions')
         
@@ -429,7 +429,7 @@ class Dynamics(F90Input):
         return input_string
     
     @staticmethod
-    def load_input(input_file: str, code_version: str = 'bessel'):
+    def load_input(input_file: str, code_version: str = 'standart'):
         """Load the dynamics from a file.
         
         Args
@@ -437,7 +437,7 @@ class Dynamics(F90Input):
         input_file: str
             Dynamics input file
         code_version: str
-            Version of the TimeESR code to use 'bessel' (default) or 'standard'.
+            Version of the TimeESR code to use standart (default) or bessel.
 
         Returns
         -------
@@ -506,7 +506,7 @@ class Dynamics(F90Input):
         if code_version == 'bessel':
             _ = infile.readline()
             params['use_bessel'] = F90Input.string2bool(infile.readline().split()[0])
-            params['bessel_aplitude'] = [float(infile.readline().split()[0]), 
+            params['bessel_amplitude'] = [float(infile.readline().split()[0]), 
                                           float(infile.readline().split()[0])]
             params['p_max'] = int(infile.readline().split()[0])
             params['n_max'] = int(infile.readline().split()[0])

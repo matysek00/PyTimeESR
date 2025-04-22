@@ -103,7 +103,7 @@ def run_freq(freq: float,
              home_path: str, 
              code_path: str, 
              outfile: str = None, 
-             code_version: str = 'bessel',
+             code_version: str = 'standart',
              treat_output: callable = treat_output):
     """
     Run the simulation with a given frequency and return the result.
@@ -156,7 +156,7 @@ def scan_freq(
         step: float = .1,
         bounds: tuple = (16., 18.),
         outfile: str = None,
-        code_version: str = 'bessel'):
+        code_version: str = 'standart'):
     """
     Scan the resonance frequency for a given system. 
     
@@ -176,8 +176,8 @@ def scan_freq(
         Frequency bounds for the scan.
     outfile : str, optional
         Path to the output file where the results will be saved.
-    args : dict, optional
-        Additional arguments to be passed to the scipy.optimize.minimize.
+    code_version : str
+        Version of the TimeESR code to use 'standart' (default) or 'bessel'.
     """        
     # Create a list of frequencies to scan
     frequencies = np.arange(bounds[0], bounds[1], step)
@@ -199,7 +199,7 @@ def Resonance(
         bounds: tuple = (16., 18.),
         method: str = 'brent',
         outfile: str = None, 
-        code_version: str = 'bessel',
+        code_version: str = 'standart',
         args: dict = {}):
     """
     Run a scan of frequency and then an optimizer on the results. 
@@ -222,6 +222,8 @@ def Resonance(
         Optimization method to be used by scipy.optimize.minimize.
     outfile : str, optional
         Path to the output file where the results will be saved.
+    code_version : str
+        Version of the TimeESR code to use 'standart' (default) or 'bessel'.
     args : dict, optional
         Additional arguments to be passed to the scipy.optimize.minimize.
 
@@ -247,6 +249,11 @@ def Resonance(
     bracket = (
         frequencies[min_index-1], frequencies[min_index], frequencies[min_index+1])
     
+    # Check if the bracket is valid
+    if bracket[0] == bracket[1] or bracket[1] == bracket[2]:
+        print("No minimum found")
+        return None, frequencies, amplitude
+
     minimizer = minimize_scalar(
         run_freq, bracket=bracket, 
         args=(dyn_dict, ham_dict, 

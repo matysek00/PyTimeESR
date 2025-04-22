@@ -23,7 +23,7 @@ class Simulation():
 
     def __init__(self, Ham_dict: dict, Dyn_dict: dict, 
                  run_path: str, code_path: str, 
-                 code_version: str = 'bessel'):
+                 code_version: str = 'standart'):
         
         """Initialize the simulation with Hamiltonian and dynamics dictionaries.
 
@@ -38,13 +38,13 @@ class Simulation():
         code_path : str
             Path to the TimeESR code directory.
         code_version : str
-            Version of the TimeESR code to use 'bessel' (default) or 'standart'.
+            Version of the TimeESR code to use 'standart' (default) or 'bessel'.
         """
         
         exec_path = os.path.join(code_path, 'TimeESR.x')
 
-        assert code_version in ['bessel', 'standard'], \
-            f"Code version {code_version} is not supported. Use 'bessel' or 'standard'."
+        assert code_version in ['bessel', 'standart'], \
+            f"Code version {code_version} is not supported. Use 'bessel' or 'standart'."
 
         assert os.path.exists(run_path), f"Run path {run_path} does not exist."
         assert os.path.exists(exec_path), f"Executable path {exec_path} does not exist."

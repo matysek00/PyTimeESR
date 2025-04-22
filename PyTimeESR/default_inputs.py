@@ -54,7 +54,7 @@ dyn_keys = {
     'cutoff': tfloat, 'gammaC': tfloat, 'integral_points': tint,
     'Nbias': tint, 'biases': [list, dict, None], 'Temperature': tfloat,
     'spin_polarization': [list, tfloat, 2], 'Electrode': tint,
-    'use_bessel': tbool, 'bessel_aplitude': [list, tfloat, 2],
+    'use_bessel': tbool, 'bessel_amplitude': [list, tfloat, 2],
     'p_max': tint, 'n_max': tint,
     'population': tbool, 'density_matrix': tbool,
     'output_file': str, 'output_fourier': str,
@@ -107,7 +107,7 @@ default_dyn = {
     'Electrode' : 0, 
 ### Bessel functions
     'use_bessel': False,
-    'bessel_aplitude': [0.0, 0.0],
+    'bessel_amplitude': [0.0, 0.0],
     'p_max': 10,
     'n_max': 3,
 ### Output
