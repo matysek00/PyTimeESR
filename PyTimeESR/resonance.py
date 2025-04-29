@@ -245,13 +245,27 @@ def Resonance(
     # Find the index of the minimum value in the dc array
     min_index = np.argmin(amplitude)
     
+    # check if the minimum is at the edge of the array
+    if min_index == 0 or min_index == len(amplitude)-1:
+        print("WARNING: Minimum is at the edge of the boundary")
+        return None, frequencies, amplitude
+    
+    # Check if amplitude is constant
+    if np.all(amplitude == amplitude[0]):
+        print("WARNING: Amplitude is constant accross the range")
+        return None, frequencies, amplitude    
+
+    # Check if the bracket is valid
+    bracket_works = ((
+        amplitude[min_index] < amplitude[min_index-1]) and(
+        amplitude[min_index] < amplitude[min_index+1]))
+
     # Get the corresponding frequency
     bracket = (
         frequencies[min_index-1], frequencies[min_index], frequencies[min_index+1])
-    
-    # Check if the bracket is valid
-    if bracket[0] == bracket[1] or bracket[1] == bracket[2]:
-        print("No minimum found")
+
+    if not bracket_works:
+        print("WARNING: No minimum found")
         return None, frequencies, amplitude
 
     minimizer = minimize_scalar(
