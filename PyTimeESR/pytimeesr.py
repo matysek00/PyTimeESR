@@ -5,7 +5,8 @@ import time
 
 import numpy as np
 
-from . import inputs
+from . import inputs, qc
+
 class Simulation(): 
     """Create, run, and analyze TimeESR simulation.
 
@@ -90,7 +91,46 @@ class Simulation():
 
     def load_output(self):
         self.results_dict['DC'] = np.loadtxt(self.output_dict['DC'])
+    
+    def get_fidelity(self, phi):
+        """Calculate the fidelity between the current and a reference state.
+
+        Args
+        -----
+        phi : np.ndarray
+            The reference state.
+
+        Returns
+        -------
+        float
+            The fidelity between the current and reference states.
+        """
+        assert 'population' in self.output_dict, \
+            'Population data not found in output dictionary.'
         
+        fnpop = self.output_dict['population']
+        time, F = self.fidelity_evolution(phi, fnpop)
+        
+        self.results_dict['fidelity'] = F
+        self.results_dict['time'] = time
+
+    def get_entropy(self,):
+        """Calculate the entropy of the system.
+
+        Returns
+        -------
+        float
+            The entropy of the system.
+        """
+        assert 'population' in self.output_dict, \
+            'Population data not found in output dictionary.'
+        
+        fnpop = self.output_dict['population']
+        time, S = self.entropy_evolution(fnpop)
+        
+        self.results_dict['entropy'] = S
+        self.results_dict['time'] = time
+
 
 def make(path): 
     """Compile the TimeESR code.
