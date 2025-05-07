@@ -1,11 +1,11 @@
 
 import os
-import sys
 import time
 
 import numpy as np
 
 from . import inputs, qc
+from .utils import make
 
 class Simulation(): 
     """Create, run, and analyze TimeESR simulation.
@@ -109,7 +109,7 @@ class Simulation():
             'Population data not found in output dictionary.'
         
         fnpop = self.output_dict['population']
-        time, F = self.fidelity_evolution(phi, fnpop)
+        time, F = qc.fidelity_evolution(phi, fnpop)
         
         self.results_dict['fidelity'] = F
         self.results_dict['time'] = time
@@ -126,17 +126,7 @@ class Simulation():
             'Population data not found in output dictionary.'
         
         fnpop = self.output_dict['population']
-        time, S = self.entropy_evolution(fnpop)
+        time, S = qc.entropy_evolution(fnpop)
         
         self.results_dict['entropy'] = S
         self.results_dict['time'] = time
-
-
-def make(path): 
-    """Compile the TimeESR code.
-    """
-    pwd = os.getcwd()
-    os.chdir(path)
-    os.system('make clean')
-    os.system('make')
-    os.chdir(pwd)
