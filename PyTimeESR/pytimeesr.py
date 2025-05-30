@@ -33,7 +33,7 @@ class Simulation():
         Ham_dict : dict
             Dictionary containing Hamiltonian parameters.
         Dyn_dict : dict
-            Dictionary containing dynamics parameters.
+            Dictionary containing dynamics parameters. Or the Floquet parameters if code_version is 'floquet'.
         run_path : str
             Path to the directory where the simulation will be run.
         code_path : str
@@ -42,10 +42,13 @@ class Simulation():
             Version of the TimeESR code to use 'standart' (default) or 'bessel'.
         """
         
-        exec_path = os.path.join(code_path, 'TimeESR.x')
-
-        assert code_version in ['bessel', 'standart'], \
+        assert code_version in ['bessel', 'standart', 'floquet'], \
             f"Code version {code_version} is not supported. Use 'bessel' or 'standart'."
+
+        executable = 'Floquet_ESR_v7.4.0.out' if code_version == 'floquet' else 'TimeESR.x'
+        exec_path = os.path.join(code_path, executable)
+
+        print(exec_path)
 
         assert os.path.exists(run_path), f"Run path {run_path} does not exist."
         assert os.path.exists(exec_path), f"Executable path {exec_path} does not exist."
@@ -54,7 +57,10 @@ class Simulation():
         self.exec_path = exec_path
 
         self.Ham = inputs.Hamiltonian(Ham_dict)
-        self.Dyn = inputs.Dynamics(Dyn_dict, code_version=code_version)
+        if code_version:
+            self.Dyn = inputs.Floquet(Dyn_dict)
+        else: 
+            self.Dyn = inputs.Dynamics(Dyn_dict, code_version=code_version)
 
         self.output_dict = {**self.output_dict,
                             **self.Dyn.create_output_dict(), 
@@ -69,8 +75,9 @@ class Simulation():
 
         current_path = os.getcwd()
         
+        dyn_fn = 'Floquet.input' if self.Dyn.code_version == 'floquet' else 'TimeESR.input'
         fnham = os.path.join(self.run_path, 'H_QD.input')
-        fnesr = os.path.join(self.run_path, 'TimeESR.input')
+        fnesr = os.path.join(self.run_path, dyn_fn)
 
         fham = open(fnham, 'w')
         fham.write(self.Ham.write_input())
@@ -90,7 +97,9 @@ class Simulation():
         self.load_output()
 
     def load_output(self):
-        self.results_dict['DC'] = np.loadtxt(self.output_dict['DC'])
+        self.results_dict = {**self.results_dict,
+                             **self.Ham.load_output(self.output_dict), 
+                             **self.Dyn.load_output(self.output_dict)}
     
     def get_fidelity(self, phi):
         """Calculate the fidelity between the current and a reference state.
