@@ -2,6 +2,7 @@ import numpy as np
 
 # Define some general types
 tfloat = (float, np.float32, np.float64)
+tcomplex = (complex, np.complex64, np.complex128)
 tint = (int, np.int32, np.int64)
 tlist = (list, np.ndarray)
 tstr = (str, np.str_)
@@ -123,3 +124,47 @@ default_dyn = {
     'redimension': False,
     'Nd': 4,
     }
+
+floq_keys = {
+    'n_max': tint, 'frequency': tfloat,
+    'gamma0': [list, tfloat, 2], 'A': [list, tcomplex, 2],
+    'phi': tfloat, 'seha': tfloat, 'cutoff': tfloat, 'gammaC': tcomplex,
+    'integral_points': tint, 'gwidth': tfloat, 'gau': tfloat, 'norb': tint,
+    'feedback': tbool, 'Iset': tfloat, 'Itol': tfloat, 'ratio' : tfloat,
+    'fermiP' : tint, 'bias': [list, tfloat, 2], 'Temperature': tfloat,
+    'Spin_polarization': [list, tfloat, 2], 'Electrode': tint,
+    'bessel_amplitude' : [list, tfloat, 2], 'p_max': tint, 
+    'write_populations': tbool, 'write_coherence': tbool,
+    'spinflo': tbool, 'redimension': tbool, 'Nd': tint,
+}
+
+default_floq = {
+    'n_max': 3,
+    'frequency': 16.0,
+    'gamma0': [0.0020, 0.0001],
+    'A': [complex(0.0), complex(0.0002)],
+    'phi': 0.0,
+    'seha': 1.,
+    'cutoff': 100.,
+    'gammaC': complex(0.0020),
+    'integral_points': 500000,
+    'gwidth': 100.,
+    'gau': 0.0,
+    'norb': 1,
+    'feedback': False,
+    'Iset': 1.0,
+    'Itol': 0.001,
+    'ratio': 10.,
+    'fermiP': 0,
+    'bias': [15., -15.],
+    'Temperature': 0.5,
+    'Spin_polarization': [0., 1.],
+    'Electrode': 0,
+    'bessel_amplitude': [0.0, 0.0],
+    'p_max': 10,
+    'write_populations': False,
+    'write_coherence': False,
+    'spinflo': False,
+    'redimension': False,
+    'Nd': 4,
+}

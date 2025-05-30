@@ -1,21 +1,31 @@
 
 import os
+import re
+
 from typing import Union
 
 from .default_inputs import *
 
-               
+
+class _complex_format(str):
+    """Custom string class to format complex numbers.
+    """
+
+    def format(self):
+        return '({:.8f},{:.8f})'.format(self.real, self.imag)              
+
+
 class F90Input(): 
     """Parent class to write fortran input.
     """
     
     fmt = {
         tfloat: '{:.8f} ',
+        tcomplex: _complex_format,
         tint: '{:d} ',
         tstr: '{} ',
         tbool: '{} ',
     }
-
     
     def __init__(self, line_lenght, padding_lenght):
         self.line_lenght = line_lenght
@@ -82,7 +92,25 @@ class F90Input():
             return False
         else:
             raise ValueError(f"Invalid boolean string: {value}. Use '.true.' or '.false.'.")
+        
+    @staticmethod
+    def load_complex(line: str) -> complex:
+        """Load a complex number from a line of the input file.
+        format: (Re, Im)
 
+        Args
+        -----
+        line: str
+            Line from the input file containing a complex number.
+
+        Returns
+        -------
+        complex: 
+            Complex number loaded from the line.
+        """
+        string = re.split(r'[()\s,]', line)[1:3]
+        z = complex(*tuple(map(float, string)))
+        return z
 
     def input_line(self, value, comment: str = ''):
         """Create a line for the input file.
@@ -103,14 +131,29 @@ class F90Input():
         t = type(value[0])
     
         # convert t the specified type into a generic type ttype
-        ttype = tfloat if t in tfloat else tint if t in tint else tstr if t in tstr else None
+        ttype = tfloat if (t in tfloat) else tint if (t in tint) else tstr if (t in tstr) else tcomplex if (t in tcomplex) else None
         assert ttype is not None, f"Type {t} not supported in input line"
-        
+    
         line = ' '.join([self.fmt[ttype].format(i) for i in value])
         pad = self.padding_lenght - len(line)
         pad = 0 if pad < 0 else pad
         line += ' ' * pad + '! ' + comment + '\n'
         return line
+    
+    def load_output(self, output_dict: str):
+        """Load the output from a file.
+        
+        Args
+        -----
+        output_dict: str
+            Output file to load.
+        
+        Returns
+        -------
+        dict: Dictionary with the output.
+        """
+        
+        return {}
     
 
 class Hamiltonian(F90Input):
@@ -256,6 +299,7 @@ class Hamiltonian(F90Input):
         
         output_dict = {}
         output_dict['hamiltonian'] = self.params['output_file']
+        output_dict['eigvalues'] = 'Eigenvalues.dat'
 
         if self.params['eigenvectors']:
             output_dict['eigenvectors'] = 'Eigenvectors.dat'
@@ -263,7 +307,12 @@ class Hamiltonian(F90Input):
             output_dict['pre-diag_hamiltonian'] = 'PD_HAMIL.dat'
         
         return output_dict
-
+    
+    def load_output(self, output_dict):
+        result_dict = {}
+        result_dict['eigenvalues'] = np.loadtxt('Eigenvalues.dat')[:,1]
+        return result_dict
+        
 
 class Dynamics(F90Input):
     """Writer for the dynamics input. 
@@ -544,3 +593,164 @@ class Dynamics(F90Input):
             output_dict['spin_dynamics'] = 'SpinDynamics.dat'
 
         return output_dict
+    
+    def load_output(self, output_dict):
+        result_dict = {}
+        self.results_dict['DC'] = np.loadtxt(self.output_dict['DC'])
+
+
+class Floquet(F90Input): 
+
+    def __init__(self, floquet_dict: Union[dict, str],
+                 line_lenght = 80, padding_lenght = 40):
+        super(Floquet, self).__init__(line_lenght, padding_lenght)
+
+        assert isinstance(floquet_dict, (dict, str)), "Floquet input should be a dictionary or a file name"
+        if isinstance(floquet_dict, str):
+            assert os.path.exists(floquet_dict), f"Floquet input file {floquet_dict} does not exist"
+            self.params = self.load_input(floquet_dict)
+        else:
+            self.params = floquet_dict
+
+        self.check_dictionary(self.params, floq_keys, 'Floquet input')
+        self.code_version = 'floquet'
+
+        print('WARNING: No error capture for Floquet input. Worst case scenario is that the code will crash.')
+
+    def write_input(self,):
+
+        input_string = self.create_header('', '*')
+        input_string += self.create_header('Floquet Input', '*')
+        input_string += self.create_header('', '*')
+        input_string += self.input_line(self.params['n_max'], 'Max order of the Fourier series')
+        input_string += self.input_line(self.params['frequency'], 'Frequency of the driving field (GHz)')
+
+        input_string += self.create_header('Electrode set-up ', '-')
+        input_string += self.input_line(self.params['gamma0'][0], 'Gamma_R_0 (meV)')
+        input_string += self.input_line(self.params['gamma0'][1], 'Gamma_L_0 (meV)')
+        input_string += self.input_line(self.params['A'][0], 'A_R')
+        input_string += self.input_line(self.params['A'][1], 'A_L')
+        input_string += self.input_line(self.params['phi'], 'Phase of the driving field (radians)')
+        input_string += self.input_line(self.params['seha'], 'Multiplies the 2nd Harmonic (UNUSED)')
+        input_string += self.input_line(self.params['cutoff'], 'Cutoff for integral Lambshift (meV)')
+        input_string += self.input_line(self.params['gammaC'], 'Broadening of Green\'s function (meV)')
+        input_string += self.input_line(self.params['integral_points'], 'Number of points for I11 and I21')
+        input_string += self.input_line(self.params['gwidth'], 'Width of the Gaussian for PDOS (meV)')
+        input_string += self.input_line(self.params['gau'], 'Width of the Gaussian for PDOS (meV)')
+        input_string += self.input_line(self.params['norb'], 'Number of orbital, 1 will not use any Diego Lehman coeff')
+        input_string += self.input_line(self.params['feedback'], 'move the tip to set current Iset')
+        input_string += self.input_line(self.params['Iset'], 'Set current (pA) if feedback is true')
+        input_string += self.input_line(self.params['Itol'], 'Tolerance for the Iset current (pA)')
+        input_string += self.input_line(self.params['ratio'], 'Ratio between gammas for the feedback')
+
+        input_string += self.create_header('Bias, temperature, and spin polarization', '-')
+        input_string += self.input_line(self.params['fermiP'], '0 EF closer to muR if gR>>gL, 1 EF to muL, 2 Ef at mu with gamma>> (UNUSED)')
+        input_string += self.input_line(self.params['bias'][0], 'Right elctrode bias (mV)')
+        input_string += self.input_line(self.params['bias'][1], 'Left electrode bias (mV)')
+        input_string += self.input_line(self.params['Temperature'], 'Temperature (K)')
+        input_string += self.input_line(self.params['Spin_polarization'][0], 'Right electrode spin polarization')
+        input_string += self.input_line(self.params['Spin_polarization'][1], 'Left electrode spin polarization')
+        input_string += self.input_line(self.params['Electrode'], 'Current measurement: 0 is left and 1 is right electrode')
+
+        input_string += self.create_header('Bessel function', '-')
+        input_string += self.input_line(self.params['bessel_amplitude'][0], 'B_R strengt of the time depenndet pulse for right electrode')
+        input_string += self.input_line(self.params['bessel_amplitude'][1], 'B_L strengt of the time depenndet pulse for left electrode')
+        input_string += self.input_line(self.params['p_max'], 'Max order of Bessel function in both directions')
+
+        input_string += self.create_header('Output', '-')
+        input_string += self.input_line(self.params['write_populations'], 'Write populations')
+        input_string += self.input_line(self.params['write_coherence'], 'Write coherences')
+        input_string += self.input_line(self.params['spinflo'], 'Write spin')
+
+        input_string += self.create_header('Misc', '-')
+        input_string += self.input_line(self.params['redimension'], 'Redimension the Hamiltonian')
+        input_string += self.input_line(self.params['Nd'], 'Redimension number - must include empty states for non-zero current')
+
+        return input_string
+    
+    @staticmethod
+    def load_input(input_file: str):
+        
+        infile = open(input_file, 'r')
+        params = {}
+
+        _ = infile.readline()
+        _ = infile.readline()
+        _ = infile.readline()
+
+        params['n_max'] = int(infile.readline().split()[0])
+        params['frequency'] = float(infile.readline().split()[0])
+        
+        _ = infile.readline()
+        params['gamma0'] = [float(infile.readline().split()[0]), 
+                            float(infile.readline().split()[0])]
+        
+        params['A'] = [Floquet.load_complex(infile.readline()),
+                        Floquet.load_complex(infile.readline())]
+        params['phi'] = float(infile.readline().split()[0])
+        params['seha'] = float(infile.readline().split()[0])
+        params['cutoff'] = float(infile.readline().split()[0])
+        params['gammaC'] = Floquet.load_complex(infile.readline())
+        params['integral_points'] = int(infile.readline().split()[0])
+        params['gwidth'] = float(infile.readline().split()[0])
+        params['gau'] = float(infile.readline().split()[0])
+        params['norb'] = int(infile.readline().split()[0])
+        params['feedback'] = F90Input.string2bool(infile.readline().split()[0])
+        params['Iset'] = float(infile.readline().split()[0])
+        params['Itol'] = float(infile.readline().split()[0])
+        params['ratio'] = float(infile.readline().split()[0])
+        
+        _ = infile.readline()
+        params['fermiP'] = int(infile.readline().split()[0])
+        params['bias'] = [float(infile.readline().split()[0]), 
+                          float(infile.readline().split()[0])]
+        params['Temperature'] = float(infile.readline().split()[0])
+        params['Spin_polarization'] = [float(infile.readline().split()[0]), 
+                                       float(infile.readline().split()[0])]
+        params['Electrode'] = int(infile.readline().split()[0])
+
+        _ = infile.readline()
+        params['bessel_amplitude'] = [float(infile.readline().split()[0]),
+                                        float(infile.readline().split()[0])]
+        params['p_max'] = int(infile.readline().split()[0])
+
+        _ = infile.readline()
+        params['write_populations'] = F90Input.string2bool(infile.readline().split()[0])
+        params['write_coherence'] = F90Input.string2bool(infile.readline().split()[0])
+        params['spinflo'] = F90Input.string2bool(infile.readline().split()[0])
+        
+        _ = infile.readline()
+        params['redimension'] = F90Input.string2bool(infile.readline().split()[0])
+        params['Nd'] = int(infile.readline().split()[0])
+        infile.close()
+
+        return params
+
+    def create_output_dict(self):
+        output_dict = {}
+
+        output_dict['hamiltonian'] = 'Hamiltonian.dat'
+        output_dict['Eval'] = 'Eigenvalues.dat'
+        output_dict['Evec'] = 'Eigenstates.dat'
+        output_dict['Spin_dist'] = 'Spin_distribution.dat'
+
+        output_dict['current'] = 'Current_0.dat'
+        output_dict['rates'] = 'rates_floquet.dat'
+        output_dict['rates_avg'] = 'rates_floquet0.dat'
+
+        if self.params['write_populations']:
+            output_dict['populations'] = 'POPULATIONS.dat'
+        if self.params['write_coherence']:
+            output_dict['coherence'] = 'COHERENCES.dat'
+        if self.params['spinflo']:
+            output_dict['spin'] = 'SpinFloquet.dat'
+        
+        return output_dict
+
+    def load_output(self, output_dict):
+        results_dict = {}
+
+        I = np.loadtxt(output_dict['current'], skiprows=1)
+        results_dict['DC'] = I[np.where(I[:,0] == 0),1][0,0]
+
+        return results_dict
