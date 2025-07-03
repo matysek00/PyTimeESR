@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import PyTimeESR
+import PyTimeESR as PyTimeESR
 import PyTimeESR.pytimeesr
 
 def main():

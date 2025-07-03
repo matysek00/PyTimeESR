@@ -5,7 +5,9 @@ import time
 
 import numpy as np
 
-from . import inputs, qc
+from .. import PyTimeESR
+
+from .empirical import qc
 
 class Simulation(): 
     """Create, run, and analyze TimeESR simulation.
@@ -48,19 +50,17 @@ class Simulation():
         executable = 'Floquet_ESR_v7.4.0.out' if code_version == 'floquet' else 'TimeESR.x'
         exec_path = os.path.join(code_path, executable)
 
-        print(exec_path)
-
         assert os.path.exists(run_path), f"Run path {run_path} does not exist."
         assert os.path.exists(exec_path), f"Executable path {exec_path} does not exist."
         
         self.run_path = run_path
         self.exec_path = exec_path
 
-        self.Ham = inputs.Hamiltonian(Ham_dict)
+        self.Ham = PyTimeESR.Hamiltonian(Ham_dict)
         if code_version:
-            self.Dyn = inputs.Floquet(Dyn_dict)
+            self.Dyn = PyTimeESR.Floquet(Dyn_dict)
         else: 
-            self.Dyn = inputs.Dynamics(Dyn_dict, code_version=code_version)
+            self.Dyn = PyTimeESR.Dynamics(Dyn_dict, code_version=code_version)
 
         self.output_dict = {**self.output_dict,
                             **self.Dyn.create_output_dict(), 

@@ -6,7 +6,7 @@ import numpy as np
 
 sys.path.append('/home/matyas/Programs/PyTimeESR')
 
-import PyTimeESR
+import PyTimeESR as PyTimeESR
 
 
 def main():

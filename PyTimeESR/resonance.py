@@ -7,6 +7,9 @@ from scipy.optimize import minimize_scalar
 
 from .pytimeesr import Simulation
 
+### THIS ENTIRE THING SHOULD BE IN SCRIPTS
+### I DON'T THINK IT IS USEFULL I WILL KEEP IN CASE I CHANGE MY MIND
+
 def find_resonant_frequency(fil, col, freq_bound = (1e-6, 1.)):
     """Find dominant freqeuncy and its amplitude in a POPULATIONS.dat file.
 
