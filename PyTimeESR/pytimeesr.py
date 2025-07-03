@@ -4,8 +4,7 @@ import time
 
 import numpy as np
 
-from . import inputs, qc
-from .utils import make
+from . import inputs
 
 class Simulation(): 
     """Create, run, and analyze TimeESR simulation.
@@ -48,8 +47,6 @@ class Simulation():
         executable = 'Floquet_ESR_v7.4.0.out' if code_version == 'floquet' else 'TimeESR.x'
         exec_path = os.path.join(code_path, executable)
 
-        print(exec_path)
-
         assert os.path.exists(run_path), f"Run path {run_path} does not exist."
         assert os.path.exists(exec_path), f"Executable path {exec_path} does not exist."
         
@@ -57,7 +54,7 @@ class Simulation():
         self.exec_path = exec_path
 
         self.Ham = inputs.Hamiltonian(Ham_dict)
-        if code_version:
+        if code_version == 'floquet':
             self.Dyn = inputs.Floquet(Dyn_dict)
         else: 
             self.Dyn = inputs.Dynamics(Dyn_dict, code_version=code_version)
@@ -69,7 +66,7 @@ class Simulation():
         self.output_dict = {key: os.path.join(run_path, value) for key, 
                             value in self.output_dict.items()}
 
-    def run(self):
+    def run(self, outfile = None):
         """Run the TimeESR simulation.
         """
 
@@ -86,20 +83,24 @@ class Simulation():
         fesr = open(fnesr, 'w')
         fesr.write(self.Dyn.write_input())
         fesr.close()
+
+        command = f'{self.exec_path}'
+        if outfile is not None: 
+            command += f' >> {outfile}'
         
         os.chdir(self.run_path)
         t1 = time.time()
-        os.system(self.exec_path)
+        os.system(f'{self.exec_path} >> {outfile}')
         t2 = time.time()
         os.chdir(current_path)
 
         self.results_dict['run_time'] = t2 - t1
-        self.load_output()
+        #self.load_output()
 
     def load_output(self):
         self.results_dict = {**self.results_dict,
                              **self.Ham.load_output(self.output_dict), 
-                             **self.Dyn.load_output(self.output_dict)}
+                             **self.Dyn.load_output()}
     
     def get_fidelity(self, phi):
         """Calculate the fidelity between the current and a reference state.
