@@ -181,3 +181,6 @@ class Floquet(F90Input):
             ratesR[tuple(ind)] = np.complex128(*r[7:9])
         
         return ratesL, ratesR
+    
+    def Iset(self, targetI):
+        pass
