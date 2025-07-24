@@ -21,6 +21,7 @@ class Floquet(F90Input):
 
         self.check_dictionary(self.params, floq_keys, 'Floquet input')
         self.code_version = 'floquet'
+        self.output_dict = self.create_output_dict()
 
         print('WARNING: No error capture for Floquet input. Worst case scenario is that the code will crash.')
 
@@ -154,10 +155,10 @@ class Floquet(F90Input):
         
         return output_dict
 
-    def load_output(self, output_dict):
+    def load_output(self):
         results_dict = {}
 
-        I = np.loadtxt(output_dict['current'], skiprows=1)
+        I = np.loadtxt(self.output_dict['current'], skiprows=1)
         results_dict['DC'] = I[np.where(I[:,0] == 0),1][0,0]
 
         return results_dict

@@ -5,9 +5,7 @@ import time
 
 import numpy as np
 
-from .. import PyTimeESR
-
-from .empirical import qc
+from . import inputs
 
 class Simulation(): 
     """Create, run, and analyze TimeESR simulation.
@@ -56,11 +54,11 @@ class Simulation():
         self.run_path = run_path
         self.exec_path = exec_path
 
-        self.Ham = PyTimeESR.Hamiltonian(Ham_dict)
-        if code_version:
-            self.Dyn = PyTimeESR.Floquet(Dyn_dict)
+        self.Ham = inputs.Hamiltonian(Ham_dict)
+        if code_version == 'floquet':
+            self.Dyn = inputs.Floquet(Dyn_dict)
         else: 
-            self.Dyn = PyTimeESR.Dynamics(Dyn_dict, code_version=code_version)
+            self.Dyn = inputs.Dynamics(Dyn_dict, code_version=code_version)
 
         self.output_dict = {**self.output_dict,
                             **self.Dyn.create_output_dict(), 
@@ -94,12 +92,12 @@ class Simulation():
         os.chdir(current_path)
 
         self.results_dict['run_time'] = t2 - t1
-        self.load_output()
+        #self.load_output()
 
     def load_output(self):
         self.results_dict = {**self.results_dict,
                              **self.Ham.load_output(self.output_dict), 
-                             **self.Dyn.load_output(self.output_dict)}
+                             **self.Dyn.load_output()}
     
     def get_fidelity(self, phi):
         """Calculate the fidelity between the current and a reference state.
