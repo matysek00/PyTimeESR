@@ -67,7 +67,7 @@ class Simulation():
         self.output_dict = {key: os.path.join(run_path, value) for key, 
                             value in self.output_dict.items()}
 
-    def run(self):
+    def run(self, outfile = None):
         """Run the TimeESR simulation.
         """
 
@@ -84,10 +84,14 @@ class Simulation():
         fesr = open(fnesr, 'w')
         fesr.write(self.Dyn.write_input())
         fesr.close()
+
+        command = f'{self.exec_path}'
+        if outfile is not None: 
+            command += f' >> {outfile}'
         
         os.chdir(self.run_path)
         t1 = time.time()
-        os.system(self.exec_path)
+        os.system(f'{self.exec_path} >> {outfile}')
         t2 = time.time()
         os.chdir(current_path)
 
