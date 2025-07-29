@@ -23,7 +23,7 @@ class Floquet(F90Input):
         self.code_version = 'floquet'
         self.output_dict = self.create_output_dict()
 
-        print('WARNING: No error capture for Floquet input. Worst case scenario is that the code will crash.')
+        #print('WARNING: No error capture for Floquet input. Worst case scenario is that the code will crash.')
 
     def write_input(self,):
 

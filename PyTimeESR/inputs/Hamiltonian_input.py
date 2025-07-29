@@ -99,7 +99,7 @@ class Hamiltonian(F90Input):
         input_string: str
             Hamiltonian input file
         """
-        print('WARNING: Loading Hamiltonian from file is not tested')        
+        #print('WARNING: Loading Hamiltonian from file is not tested')        
         
         infile = open(input_file, 'r')
 
