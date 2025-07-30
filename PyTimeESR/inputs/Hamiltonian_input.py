@@ -22,7 +22,7 @@ class Hamiltonian(F90Input):
         assert isinstance(hamiltonian_dict, (dict, str)),  "Hamiltonian input should be a dictionary or a file name"
         if isinstance(hamiltonian_dict, str):
             assert os.path.exists(hamiltonian_dict), f"Hamiltonian input file {hamiltonian_dict} does not exist"
-            self.load_input(hamiltonian_dict)
+            self.params = self.load_input(hamiltonian_dict)
         else:
             self.params = hamiltonian_dict
         self.check_dictionary(self.params, ham_keys, 'Hamiltonian input')
@@ -162,3 +162,11 @@ class Hamiltonian(F90Input):
         result_dict = {}
         result_dict['eigenvalues'] = np.loadtxt('Eigenvalues.dat')[:,1]
         return result_dict
+    
+    def set_angle(self, angle: float, i: int = 0): 
+        Nm = self.params['Nm']
+        assert i < Nm, f'Can not index Spin {i} only {Nm} spins exist.'
+        
+        Bmag = np.linalg.norm(np.array(self.params['Spins'][i]['H']))
+        Bfield = Bmag*np.array([np.cos(angle), 0., np.sin(angle)])
+        self.params['Spins'][i]['H'] = Bfield
