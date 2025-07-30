@@ -168,5 +168,5 @@ class Hamiltonian(F90Input):
         assert i < Nm, f'Can not index Spin {i} only {Nm} spins exist.'
         
         Bmag = np.linalg.norm(np.array(self.params['Spins'][i]['H']))
-        Bfield = Bmag*np.array([np.cos(angle), 0., np.sin(angle)])
+        Bfield = Bmag*np.array([np.sin(angle), 0., np.cos(angle)])
         self.params['Spins'][i]['H'] = Bfield
