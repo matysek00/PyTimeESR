@@ -29,6 +29,9 @@ def Iset(Sim, Itarget, outfile=None, frequency=None, init_step=None,
         Sim.Dyn.params['frequency'] = frequency
 
     #res = minimize(Iset_step, gL, (Itarget, Sim, outfile), bounds = bounds, options=options)
-    res = root_scalar(Iset_step, args = (Itarget, Sim, outfile), 
-        method=method, bracket=bounds, x0=gL, x1=x1, xtol=1e-8)
+    try:
+        res = root_scalar(Iset_step, args = (Itarget, Sim, outfile), 
+            method=method, bracket=bounds, x0=gL, x1=x1, xtol=1e-8)
+    except: 
+        res = {'converged': False, 'root': gL, 'message': 'Failed with method: ' + method}
     return res
