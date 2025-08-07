@@ -28,8 +28,11 @@ def Iset(Sim,
         Initial step size for the root finding method, by default None.
     method : str, optional
         The method to use for root finding, by default 'brentq'.
+<<<<<<< HEAD
     ratio : float, optional
         Ratio to scale the upper bound of gL/gR, by default 1.0.
+=======
+>>>>>>> ccd4c0b (comments)
     
     Returns
     -------
