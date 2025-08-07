@@ -1,4 +1,4 @@
-from scipy.optimize import minimize, root_scalar
+from scipy.optimize import root_scalar
 import numpy as np
 
 def Iset_step(gL, Itarget, Sim, outfile=None):
