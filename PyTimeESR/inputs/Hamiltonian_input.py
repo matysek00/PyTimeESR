@@ -163,10 +163,10 @@ class Hamiltonian(F90Input):
         result_dict['eigenvalues'] = np.loadtxt('Eigenvalues.dat')[:,1]
         return result_dict
     
-    def set_angle(self, angle: float, i: int = 0): 
+    def set_angle(self, angle: float, i: int = 0, Bmag: float = None): 
         Nm = self.params['Nm']
         assert i < Nm, f'Can not index Spin {i} only {Nm} spins exist.'
         
-        Bmag = np.linalg.norm(np.array(self.params['Spins'][i]['H']))
+        Bmag = np.linalg.norm(np.array(self.params['Spins'][i]['H'])) if Bmag is None else Bmag
         Bfield = Bmag*np.array([np.sin(angle), 0., np.cos(angle)])
         self.params['Spins'][i]['H'] = Bfield
