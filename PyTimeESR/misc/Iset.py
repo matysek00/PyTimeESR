@@ -28,11 +28,8 @@ def Iset(Sim,
         Initial step size for the root finding method, by default None.
     method : str, optional
         The method to use for root finding, by default 'brentq'.
-<<<<<<< HEAD
     ratio : float, optional
         Ratio to scale the upper bound of gL/gR, by default 1.0.
-=======
->>>>>>> ccd4c0b (comments)
     
     Returns
     -------
@@ -62,7 +59,7 @@ def Iset(Sim,
     #res = minimize(Iset_step, gL, (Itarget, Sim, outfile), bounds = bounds, options=options)
     try:
         res = root_scalar(Iset_step, args = (Itarget, Sim, outfile), 
-            method=method, bracket=bounds, x0=gL, x1=x1, xtol=1e-8)
+            method=method, bracket=bounds, x0=gL, x1=x1, xtol=1e-5)
     except: 
         res = {'converged': False, 'root': gL, 'message': 'Failed with method: ' + method}
     return res
