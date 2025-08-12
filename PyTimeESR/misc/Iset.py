@@ -45,7 +45,7 @@ def Iset(Sim,
     
     if frequency is None:
         # turn off driving 
-        print('WARNING: No frequency provided, setting driving parameters to zero.')
+        print('WARNING: No frequency provided, setting driving parameters to zero.', flush=True)
         Sim.Dyn.params['A'] = [0+0j,0+0j]
         Sim.Dyn.params['bessel_amplitude'] = [0,0]
         Sim.Dyn.params['n_max'] = 3
@@ -68,6 +68,8 @@ def Iset_step(gL, Itarget, Sim, outfile=None):
     Sim.run(outfile)
     Sim.load_output()
     DC = np.abs(Sim.results_dict['DC'])
+
+    print('Iset_step: gamma0 =', gL, 'DC =', DC, 'Itarget =', Itarget, flush=True)
     return DC-Itarget
 
 def Feedback(Sim, 
