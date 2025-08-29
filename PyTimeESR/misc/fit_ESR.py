@@ -3,7 +3,7 @@ from scipy.optimize import curve_fit
 
 
 
-def create_fit_esr(x, y, beta0, lb, ub):
+def create_fit_esr(x, y, beta0=None, lb=None, ub=None):
     """Probably redundant funcition
     """
     # Perform curve fitting
