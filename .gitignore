@@ -1,5 +1,4 @@
 *.dat
 *.output
 *.pyc
-*.input
 workspace/
