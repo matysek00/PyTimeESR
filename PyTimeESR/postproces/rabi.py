@@ -25,7 +25,7 @@ def expand_rates(G_red, N):
             
     return G 
 
-def Rabi_oscilation(fn_rates: str, n_max: int, hbar: float= 2.418883402334483e-8,):
+def Rabi_oscilation(fn_rates: str, n_max: int, hbar: float= 6.582119569e-4,):
     """Calculates the folowing 
     Omega_SST = Re Gamma(g,v,v,e)
     Omega_FLT = Im Gamma(g,v,v,e)
@@ -39,7 +39,7 @@ def Rabi_oscilation(fn_rates: str, n_max: int, hbar: float= 2.418883402334483e-8
     n_max (int):
         maximum fourier component to consider
     hbar (float, optional): 
-        hbar, with apropriate time energy conversion. 
+        hbar, with apropriate time energy conversion (default= meV ns)
 
     Returns:
     --------

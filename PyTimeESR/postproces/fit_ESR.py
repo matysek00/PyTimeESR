@@ -3,18 +3,30 @@ from scipy.optimize import curve_fit
 
 
 
-def create_fit_esr(x, y, beta0=None, lb=None, ub=None):
+def create_fit_esr(x, y, beta0=None, lb=None, ub=None, maxfev=None):
     """Probably redundant funcition
+   
+    p0 = (res, gamma, Isym, Iasym, p0, p1, p2, pinv)
+    
+    Ips = Isym/(1 + (x - res)**2 / gamma**2)
+    Ipa = 2 * Iasym * (x - res) / (2 * (x - res)**2 + gamma**2)
+    I0 = pinv/(x+1e-10) + p0 + p1 * x + p2 * x**2
+    I = I0 + Ips + Ipa
     """
     # Perform curve fitting
-    popt, pcov = curve_fit(ESR_fit_fun, x, y, p0=beta0, bounds=(lb, ub))   
+    popt, pcov = curve_fit(ESR_fit_fun, x, y, p0=beta0, bounds=(lb, ub), maxfev=maxfev)   
+    popt[1] = np.abs(popt[1]) # this parametes is always squared
     
-    # Return outputs
     return popt, np.sqrt(np.diag(pcov))
 
 def ESR_fit_fun(x, res, gamma, Isym, Iasym, p0, p1, p2, pinv):
     """
     ESR fitting function.
+    
+    Ips = Isym/(1 + (x - res)**2 / gamma**2)
+    Ipa = 2 * Iasym * (x - res) / (2 * (x - res)**2 + gamma**2)
+    I0 = pinv/(x+1e-10) + p0 + p1 * x + p2 * x**2
+    I = I0 + Ips + Ipa
 
     Parameters:
     x : array_like
