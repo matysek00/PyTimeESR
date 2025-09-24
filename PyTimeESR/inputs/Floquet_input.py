@@ -23,7 +23,6 @@ class Floquet(F90Input):
         self.code_version = 'floquet'
         self.output_dict = self.create_output_dict()
 
-        #print('WARNING: No error capture for Floquet input. Worst case scenario is that the code will crash.')
 
     def write_input(self,):
 
@@ -39,18 +38,11 @@ class Floquet(F90Input):
         input_string += self.input_line(self.params['A'][0], 'A_R')
         input_string += self.input_line(self.params['A'][1], 'A_L')
         input_string += self.input_line(self.params['phi'], 'Phase of the driving field (radians)')
-        input_string += self.input_line(self.params['seha'], 'Multiplies the 2nd Harmonic (UNUSED)')
         input_string += self.input_line(self.params['cutoff'], 'Cutoff for integral Lambshift (meV)')
         input_string += self.input_line(self.params['gammaC'], 'Broadening of Green\'s function (meV)')
         input_string += self.input_line(self.params['integral_points'], 'Number of points for I11 and I21')
-        input_string += self.input_line(self.params['gwidth'], 'Width of the Gaussian for PDOS (meV)')
-        input_string += self.input_line(self.params['gau'], 'Width of the Gaussian for PDOS (meV)')
         input_string += self.input_line(self.params['norb'], 'Number of orbital, 1 will not use any Diego Lehman coeff')
-        input_string += self.input_line(self.params['feedback'], 'move the tip to set current Iset')
-        input_string += self.input_line(self.params['Iset'], 'Set current (pA) if feedback is true')
-        input_string += self.input_line(self.params['Itol'], 'Tolerance for the Iset current (pA)')
-        input_string += self.input_line(self.params['ratio'], 'Ratio between gammas for the feedback')
-
+        
         input_string += self.create_header('Bias, temperature, and spin polarization', '-')
         input_string += self.input_line(self.params['fermiP'], '0 EF closer to muR if gR>>gL, 1 EF to muL, 2 Ef at mu with gamma>> (UNUSED)')
         input_string += self.input_line(self.params['bias'][0], 'Right elctrode bias (mV)')
@@ -100,13 +92,7 @@ class Floquet(F90Input):
         params['cutoff'] = float(infile.readline().split()[0])
         params['gammaC'] = Floquet.load_complex(infile.readline())
         params['integral_points'] = int(infile.readline().split()[0])
-        params['gwidth'] = float(infile.readline().split()[0])
-        params['gau'] = float(infile.readline().split()[0])
         params['norb'] = int(infile.readline().split()[0])
-        params['feedback'] = F90Input.string2bool(infile.readline().split()[0])
-        params['Iset'] = float(infile.readline().split()[0])
-        params['Itol'] = float(infile.readline().split()[0])
-        params['ratio'] = float(infile.readline().split()[0])
         
         _ = infile.readline()
         params['fermiP'] = int(infile.readline().split()[0])
