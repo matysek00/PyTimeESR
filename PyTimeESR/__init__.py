@@ -1,4 +1,4 @@
-from .pytimeesr import Simulation, make
+from .pytimeesr import Simulation
 from .inputs import Hamiltonian, Dynamics, Floquet
 from .inputs import default_ham, default_dyn, default_floq
 #from . import resonance

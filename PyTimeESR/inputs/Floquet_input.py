@@ -88,7 +88,6 @@ class Floquet(F90Input):
         params['A'] = [Floquet.load_complex(infile.readline()),
                         Floquet.load_complex(infile.readline())]
         params['phi'] = float(infile.readline().split()[0])
-        params['seha'] = float(infile.readline().split()[0])
         params['cutoff'] = float(infile.readline().split()[0])
         params['gammaC'] = Floquet.load_complex(infile.readline())
         params['integral_points'] = int(infile.readline().split()[0])
