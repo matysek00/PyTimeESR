@@ -144,7 +144,11 @@ class Floquet(F90Input):
         results_dict = {}
 
         I = np.loadtxt(self.output_dict['current'], skiprows=1)
-        results_dict['DC'] = I[np.where(I[:,0] == 0),1][0,0]
+        
+        if I.size == 2: # In case that only DC current was taken
+            results_dict['DC'] = I[1]
+        else:
+            results_dict['DC'] = I[0,1]
 
         return results_dict
     
