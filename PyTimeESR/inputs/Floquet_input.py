@@ -9,7 +9,7 @@ from .default_inputs import *
 class Floquet(F90Input): 
 
     def __init__(self, floquet_dict: Union[dict, str],
-                 line_lenght = 80, padding_lenght = 40):
+                 line_lenght = 80, padding_lenght = 40, dev=False):
         super(Floquet, self).__init__(line_lenght, padding_lenght)
 
         assert isinstance(floquet_dict, (dict, str)), "Floquet input should be a dictionary or a file name"
@@ -18,7 +18,8 @@ class Floquet(F90Input):
             self.params = self.load_input(floquet_dict)
         else:
             self.params = floquet_dict
-
+        
+        self.dev = dev 
         self.check_dictionary(self.params, floq_keys, 'Floquet input')
         self.code_version = 'floquet'
         self.output_dict = self.create_output_dict()
@@ -51,6 +52,9 @@ class Floquet(F90Input):
         input_string += self.input_line(self.params['Spin_polarization'][0], 'Right electrode spin polarization')
         input_string += self.input_line(self.params['Spin_polarization'][1], 'Left electrode spin polarization')
         input_string += self.input_line(self.params['Electrode'], 'Current measurement: 0 is left and 1 is right electrode')
+        if self.dev:
+            input_string += self.input_line(self.params['c'][0], 'WKB approximation exponent to energy (Right)')
+            input_string += self.input_line(self.params['c'][1], 'WKB approximation exponent to energy (Left)')
 
         input_string += self.create_header('Bessel function', '-')
         input_string += self.input_line(self.params['bessel_amplitude'][0], 'B_R strengt of the time depenndet pulse for right electrode')
@@ -69,7 +73,7 @@ class Floquet(F90Input):
         return input_string
     
     @staticmethod
-    def load_input(input_file: str):
+    def load_input(input_file: str, dev=False):
         
         infile = open(input_file, 'r')
         params = {}
@@ -101,6 +105,9 @@ class Floquet(F90Input):
         params['Spin_polarization'] = [float(infile.readline().split()[0]), 
                                        float(infile.readline().split()[0])]
         params['Electrode'] = int(infile.readline().split()[0])
+        if dev:
+            params['C'] = [float(infile.readline().split()[0]), 
+                        float(infile.readline().split()[0])]
 
         _ = infile.readline()
         params['bessel_amplitude'] = [float(infile.readline().split()[0]),
