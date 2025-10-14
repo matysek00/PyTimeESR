@@ -51,6 +51,8 @@ class Floquet(F90Input):
         input_string += self.input_line(self.params['Temperature'], 'Temperature (K)')
         input_string += self.input_line(self.params['Spin_polarization'][0], 'Right electrode spin polarization')
         input_string += self.input_line(self.params['Spin_polarization'][1], 'Left electrode spin polarization')
+        input_string += self.input_line(self.params['c'][0], 'Transport Exponent, right')
+        input_string += self.input_line(self.params['c'][1], 'Transport Exponent, left')
         input_string += self.input_line(self.params['Electrode'], 'Current measurement: 0 is left and 1 is right electrode')
 
         input_string += self.create_header('Bessel function', '-')
@@ -102,6 +104,8 @@ class Floquet(F90Input):
         params['Temperature'] = float(infile.readline().split()[0])
         params['Spin_polarization'] = [float(infile.readline().split()[0]), 
                                        float(infile.readline().split()[0])]
+        params['c'] = [float(infile.readline().split()[0]), 
+                        float(infile.readline().split()[0])]
         params['Electrode'] = int(infile.readline().split()[0])
 
         _ = infile.readline()
