@@ -4,6 +4,7 @@ from typing import Union
 
 from .F90_input import F90Input
 from .default_inputs import *
+from ..misc import find_bessel_order
 
 
 class Floquet(F90Input): 
@@ -55,7 +56,8 @@ class Floquet(F90Input):
         input_string += self.create_header('Bessel function', '-')
         input_string += self.input_line(self.params['bessel_amplitude'][0], 'B_R strengt of the time depenndet pulse for right electrode')
         input_string += self.input_line(self.params['bessel_amplitude'][1], 'B_L strengt of the time depenndet pulse for left electrode')
-        input_string += self.input_line(self.params['p_max'], 'Max order of Bessel function in both directions')
+        input_string += self.input_line(self.params['p_max'][0], 'Max order of Bessel function in both directions, right')
+        input_string += self.input_line(self.params['p_max'][1], 'Max order of Bessel function in both directions, left')
 
         input_string += self.create_header('Output', '-')
         input_string += self.input_line(self.params['write_populations'], 'Write populations')
@@ -105,7 +107,8 @@ class Floquet(F90Input):
         _ = infile.readline()
         params['bessel_amplitude'] = [float(infile.readline().split()[0]),
                                         float(infile.readline().split()[0])]
-        params['p_max'] = int(infile.readline().split()[0])
+        params['p_max'] = [int(infile.readline().split()[0]),
+                           int(infile.readline().split()[0])]
 
         _ = infile.readline()
         params['write_populations'] = F90Input.string2bool(infile.readline().split()[0])
@@ -170,6 +173,14 @@ class Floquet(F90Input):
             ratesR[tuple(ind)] = np.complex128(*r[7:9])
         
         return ratesL, ratesR
+    
+    def set_pmax(self):
+
+        Vrf = self.params['bessel_amplitude'] 
+        omega = self.params['frequency']
+
+        self.params['p_max'][0] = find_bessel_order(Vrf[0], omega)
+        self.params['p_max'][1] = find_bessel_order(Vrf[1], omega)
     
     def Iset(self, targetI):
         pass

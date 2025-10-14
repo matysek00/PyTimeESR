@@ -132,7 +132,7 @@ floq_keys = {
     'gammaC': tcomplex, 'integral_points': tint, 'norb': tint,
     'fermiP' : tint, 'bias': [list, tfloat, 2], 'Temperature': tfloat,
     'Spin_polarization': [list, tfloat, 2], 'Electrode': tint,
-    'bessel_amplitude' : [list, tfloat, 2], 'p_max': tint, 
+    'bessel_amplitude' : [list, tfloat, 2], 'p_max': [list, tint,2], 
     'write_populations': tbool, 'write_coherence': tbool,
     'spinflo': tbool, 'redimension': tbool, 'Nd': tint,
 }
@@ -153,7 +153,7 @@ default_floq = {
     'Spin_polarization': [0., 1.],
     'Electrode': 0,
     'bessel_amplitude': [0.0, 0.0],
-    'p_max': 10,
+    'p_max': [10,10],
     'write_populations': False,
     'write_coherence': False,
     'spinflo': False,
