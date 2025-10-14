@@ -4,6 +4,7 @@ from typing import Union
 
 from .F90_input import F90Input
 from .default_inputs import *
+from ..misc import find_bessel_order
 
 
 class Floquet(F90Input): 
@@ -51,6 +52,8 @@ class Floquet(F90Input):
         input_string += self.input_line(self.params['Temperature'], 'Temperature (K)')
         input_string += self.input_line(self.params['Spin_polarization'][0], 'Right electrode spin polarization')
         input_string += self.input_line(self.params['Spin_polarization'][1], 'Left electrode spin polarization')
+        input_string += self.input_line(self.params['c'][0], 'Transport Exponent, right')
+        input_string += self.input_line(self.params['c'][1], 'Transport Exponent, left')
         input_string += self.input_line(self.params['Electrode'], 'Current measurement: 0 is left and 1 is right electrode')
         if self.dev:
             input_string += self.input_line(self.params['c'][0], 'WKB approximation exponent to energy (Right)')
@@ -59,7 +62,8 @@ class Floquet(F90Input):
         input_string += self.create_header('Bessel function', '-')
         input_string += self.input_line(self.params['bessel_amplitude'][0], 'B_R strengt of the time depenndet pulse for right electrode')
         input_string += self.input_line(self.params['bessel_amplitude'][1], 'B_L strengt of the time depenndet pulse for left electrode')
-        input_string += self.input_line(self.params['p_max'], 'Max order of Bessel function in both directions')
+        input_string += self.input_line(self.params['p_max'][0], 'Max order of Bessel function in both directions, right')
+        input_string += self.input_line(self.params['p_max'][1], 'Max order of Bessel function in both directions, left')
 
         input_string += self.create_header('Output', '-')
         input_string += self.input_line(self.params['write_populations'], 'Write populations')
@@ -104,6 +108,8 @@ class Floquet(F90Input):
         params['Temperature'] = float(infile.readline().split()[0])
         params['Spin_polarization'] = [float(infile.readline().split()[0]), 
                                        float(infile.readline().split()[0])]
+        params['c'] = [float(infile.readline().split()[0]), 
+                        float(infile.readline().split()[0])]
         params['Electrode'] = int(infile.readline().split()[0])
         if dev:
             params['C'] = [float(infile.readline().split()[0]), 
@@ -112,7 +118,8 @@ class Floquet(F90Input):
         _ = infile.readline()
         params['bessel_amplitude'] = [float(infile.readline().split()[0]),
                                         float(infile.readline().split()[0])]
-        params['p_max'] = int(infile.readline().split()[0])
+        params['p_max'] = [int(infile.readline().split()[0]),
+                           int(infile.readline().split()[0])]
 
         _ = infile.readline()
         params['write_populations'] = F90Input.string2bool(infile.readline().split()[0])
@@ -151,7 +158,11 @@ class Floquet(F90Input):
         results_dict = {}
 
         I = np.loadtxt(self.output_dict['current'], skiprows=1)
-        results_dict['DC'] = I[np.where(I[:,0] == 0),1][0,0]
+        
+        if I.size == 2: # In case that only DC current was taken
+            results_dict['DC'] = I[1]
+        else:
+            results_dict['DC'] = I[0,1]
 
         return results_dict
     
@@ -173,6 +184,14 @@ class Floquet(F90Input):
             ratesR[tuple(ind)] = np.complex128(*r[7:9])
         
         return ratesL, ratesR
+    
+    def set_pmax(self):
+
+        Vrf = self.params['bessel_amplitude'] 
+        omega = self.params['frequency']
+
+        self.params['p_max'][0] = find_bessel_order(Vrf[0], omega)
+        self.params['p_max'][1] = find_bessel_order(Vrf[1], omega)
     
     def Iset(self, targetI):
         pass
