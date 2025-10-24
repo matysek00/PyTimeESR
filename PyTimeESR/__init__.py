@@ -6,3 +6,4 @@ from .empirical import qc
 from .empirical import rabi
 from . import misc
 from . import postproces
+from . import Calculations 

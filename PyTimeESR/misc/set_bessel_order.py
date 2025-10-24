@@ -2,7 +2,7 @@ import numpy  as np
 
 from scipy.special import jv
 
-def find_bessel_order(Vrf: float, omega: float, pmax: int = 1e6, tresh=1e-6): 
+def find_bessel_order(Vrf: float, omega: float, pmax: int = 1e6, tresh=1e-4): 
     """
 
     Parameters:
