@@ -3,7 +3,7 @@ from scipy.optimize import curve_fit
 
 
 
-def create_fit_esr(x, y, Zeeman, lb=None, ub=None, maxfev=None, size = 1.,tol=1e-5, weight_scale=0):
+def create_fit_esr(x, y, Zeeman, lb=None, ub=None, maxfev=None, size = 1.,tol=1e-4, weight_scale=0):
     """Probably redundant funcition
    
     p0 = (res, gamma, Isym, Iasym, p0, p1, p2, pinv)
@@ -16,27 +16,21 @@ def create_fit_esr(x, y, Zeeman, lb=None, ub=None, maxfev=None, size = 1.,tol=1e
         to put more emphasis on fitting the peak region.
     """
     ### NEED To FIT ALL Peaks at SIMULTANEOUSLY
+    p0 = guess_p0(x, y, Zeeman, size)
     use = np.abs(x - Zeeman) < size
-    p0 = guess_p0(x, y, Zeeman, use)
-    print(p0)
     
-    var = np.max(x[use]) - np.min(x[use])
+    var = np.max(y[use]) - np.min(y[use])
     
     if var < tol:
         opt = np.zeros_like(p0)
         opt[0] = Zeeman
-        return p0, np.zeros_like(p0)
+        return np.zeros_like(p0), np.zeros_like(p0)
     try:
         popt, pcov = curve_fit(ESR_fit_fun, x[use], y[use], p0=p0, bounds=(lb, ub), maxfev=maxfev,)       
     except RuntimeError:
         opt = np.zeros_like(p0)
         opt[0] = Zeeman
-        return p0, np.zeros_like(p0)
-
-    if popt[1] < 0:
-        # negative gamma 
-        popt[1] = -popt[1]
-        popt[3] = -popt[3]    
+        return np.zeros_like(p0), np.zeros_like(p0)
 
     return popt, np.sqrt(np.diag(pcov))
 
@@ -102,45 +96,32 @@ def background_current(x, p0, p1, p2, pinv,):
     I0 = pinv/(x+1e-10) + p0 + p1 * x + p2 * x**2
     return I0
 
-def guess_p0(x, y, x0, use):
+def guess_p0(x, y, x0, size):
     
-    b = (y[1]-y[0])/(x[1]-x[0])
+    b = (y[-1]-y[0])/(x[-1]-x[0])
     a = y[0] - b*x[0]
     
+    use = np.abs(x - x0) < size
+
     y = y[use]
     x = x[use]
 
+    y -= b*x + a
+
+    Is = y[np.argmin(np.abs(x-x0))]
+
+
     argmin = np.argmin(y)
     argmax = np.argmax(y)
-
     
-    ymax= y[argmax]
-    ymin= y[argmin]
-
-    maxmin = (ymax - a)/(ymin - a)
-
-    rat0 = 100
-    if maxmin > rat0:
-        Ia = 0
-        Is = ymax - a
-        
-        half_width1 = np.argmin(ymax/2 - a - y[:argmax])
-        half_width2 = np.argmin(ymax/2 - a - y[argmax:])
-        gamma = (x[argmax - half_width1] - x[argmax + half_width2])/2
-
-    elif 1/maxmin > rat0:
-        Ia = 0
-        Is = -ymin - a
-
-        half_width1 = np.argmin(-ymin/2 - a - y[:argmin])
-        half_width2 = np.argmin(-ymin/2 - a - y[argmin:])
-        gamma = (x[argmin - half_width1] - x[argmin + half_width2])/2
-
-    else:
-        Is = -(ymax + ymin)
-        Ia = (ymax- ymin)
-        gamma = np.abs(x[argmax] - x[argmin])/2
+    gamma = x[argmax] - x[argmin] # assuming Is = 0, but should be close
+    Ia = y[argmax] - y[argmin]
+    
+    Ia = gamma/np.abs(gamma)*Ia # fix sign
+    gamma = np.abs(gamma)
 
 
     p0 = [x0, gamma, Is, Ia, a, b , 0., 0.]
+    upper_bound = [x0 + size/2, 1.,  1.1*np.abs(Ia),  1.1*np.abs(Ia), np.inf, np.inf, np.inf, np.inf]
+    lower_bound = [x0 - size/2, 0., -1.1*np.abs(Ia), -1.1*np.abs(Ia), np.inf, np.inf, np.inf, np.inf]
     return p0
